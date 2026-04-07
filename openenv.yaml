@@ -1,0 +1,92 @@
+name: adaptive-financial-decision-env
+version: "2.0.0"
+description: >
+  Production-grade OpenEnv for complex financial decision-making.
+  AI agent must identify expense leaks, handle uncertainty, and make strategic decisions.
+
+environment:
+  class: env.environment.ExpenseLeakDetectionEnv
+  entry_point: env:ExpenseLeakDetectionEnv
+
+api:
+  reset: "Reset environment, return initial observation"
+  step: "Execute action, return (observation, reward, done, info)"
+  state: "Return internal state"
+
+tasks:
+  - id: easy
+    difficulty: easy
+    description: "Clear leaks: unused subscriptions, duplicates"
+    expected_leaks: 3
+    max_steps: 10
+
+  - id: medium
+    difficulty: medium
+    description: "Ambiguous cases: low usage gym, food delivery habits"
+    expected_leaks: 6
+    max_steps: 12
+
+  - id: hard
+    difficulty: hard
+    description: "Complex: hidden fees, conflicting signals, goal misalignment"
+    expected_leaks: 10
+    max_steps: 15
+
+actions:
+  - name: analyze_pattern
+    description: "Analyze spending patterns"
+  - name: flag_expense
+    description: "Flag expense as leak"
+    parameters: [expense_id, reason, leak_type_guess, estimated_savings, confidence]
+  - name: suggest_optimization
+    description: "Suggest optimization"
+    parameters: [suggestion, potential_savings, related_expense_ids, trade_offs]
+  - name: ask_clarification
+    description: "Request clarification"
+    parameters: [question, expense_id]
+  - name: compare_expenses
+    description: "Compare expenses"
+    parameters: [expense_ids_to_compare]
+  - name: investigate_pattern
+    description: "Investigate pattern"
+    parameters: [expense_ids_to_analyze]
+  - name: stop_analysis
+    description: "End analysis"
+
+observation:
+  type: object
+  properties:
+    expenses: "List of expenses with metadata"
+    budget: "Monthly budget"
+    user_profile: "Income, lifestyle, goals"
+    step_count: "Current step"
+    max_steps: "Maximum steps"
+    identified_leaks_count: "Leaks flagged"
+    done: "Episode complete flag"
+
+reward:
+  type: shaped
+  range: [-0.3, 0.5]
+  components:
+    correct_leak: 0.5
+    pattern_discovery: 0.2
+    useful_suggestion: 0.3
+    incorrect_flag: -0.3
+    repeated_action: -0.2
+
+grader:
+  class: env.grader.ExpenseGrader
+  score_range: [0.0, 1.0]
+  components: [accuracy, efficiency, reasoning, discovery]
+
+requirements:
+  python: ">=3.10"
+  dependencies: [pydantic, openai, python-dotenv]
+
+inference:
+  script: inference.py
+  environment_variables: [API_BASE_URL, MODEL_NAME, HF_TOKEN]
+  output_format:
+    start: "[START] task=<task> env=<env> model=<model>"
+    step: "[STEP] step=<n> action=<action> reward=<r> done=<bool> error=<err>"
+    end: "[END] success=<bool> steps=<n> score=<score> rewards=[...]"
