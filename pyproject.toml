@@ -1,0 +1,15 @@
+[project]
+name = "expense-agent-openenv"
+version = "0.1.0"
+requires-python = ">=3.10"
+
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "openai",
+    "requests",
+    "openenv-core>=0.2.0"
+]
+
+[project.scripts]
+server = "server.app:main"
